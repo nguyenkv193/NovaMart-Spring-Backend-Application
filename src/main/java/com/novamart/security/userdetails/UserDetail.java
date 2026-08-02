@@ -15,11 +15,15 @@ import java.util.List;
 public class UserDetail implements UserDetails {
     private final User user;
 
+    public Long getUserId() {
+        return user.getId();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<GrantedAuthority> authorities = new ArrayList<>();
+        final List<GrantedAuthority> authorities = new ArrayList<>(2);
 
-        if(user.getRole() != null) {
+        if (user.getRole() != null) {
             authorities.add(
                     new SimpleGrantedAuthority(
                             "ROLE_" + user.getRole().name()
@@ -27,7 +31,7 @@ public class UserDetail implements UserDetails {
             );
         }
 
-        if(user.getPermission() != null) {
+        if (user.getPermission() != null) {
             authorities.add(
                     new SimpleGrantedAuthority(
                             user.getPermission().name()

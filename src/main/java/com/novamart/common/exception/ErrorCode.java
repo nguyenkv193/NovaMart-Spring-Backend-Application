@@ -3,10 +3,12 @@ package com.novamart.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
-    BAD_REQUEST("BAD_REQUEST", "Bad Request", HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED("UNAUTHORIZED", "Authentication required", HttpStatus.UNAUTHORIZED),
-    NOT_FOUND("NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND),
-    INTERNAL_ERROR("INTERNAL_ERROR", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+    BAD_REQUEST("BAD_REQUEST", "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED("UNAUTHORIZED", "Yêu cầu xác thực", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN("FORBIDDEN", "Từ chối truy cập", HttpStatus.FORBIDDEN),
+    NOT_FOUND("NOT_FOUND", "Không tìm thấy tài nguyên", HttpStatus.NOT_FOUND),
+    CONFLICT("CONFLICT", "Xung đột trạng thái hoặc dữ liệu", HttpStatus.CONFLICT),
+    INTERNAL_ERROR("INTERNAL_ERROR", "Lỗi hệ thống", HttpStatus.INTERNAL_SERVER_ERROR);
 
 
     private final String code;

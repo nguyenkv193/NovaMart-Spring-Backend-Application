@@ -15,9 +15,9 @@ public class ApiResponse<T> {
     private String message;
 
     private T data;
-    private Map<String, String> erros;
+    private Map<String, String> errors;
 
-    private LocalDateTime timestamps;
+    private LocalDateTime timestamp;
 
     public static <T> ApiResponse<T> success(int code, String message, T data) {
         return new ApiResponse<>(

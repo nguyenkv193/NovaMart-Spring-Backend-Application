@@ -1,6 +1,7 @@
 package com.novamart.modules.auth.controllers;
 
 import com.novamart.common.response.ApiResponse;
+import com.novamart.modules.auth.constants.AuthMessageConstants;
 import com.novamart.modules.auth.dto.AuthResponse;
 import com.novamart.modules.auth.dto.LoginRequest;
 import com.novamart.modules.auth.dto.RegisterRequest;
@@ -29,7 +30,7 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(
                         HttpStatus.CREATED.value(),
-                        "User registered successfully",
+                        AuthMessageConstants.USER_REGISTERED_SUCCESSFULLY,
                         authService.register(registerRequest)
                 ));
     }
@@ -40,7 +41,7 @@ public class AuthController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 HttpStatus.OK.value(),
-                "Login successful",
+                AuthMessageConstants.LOGIN_SUCCESSFUL,
                 authService.login(loginRequest)
         ));
     }
