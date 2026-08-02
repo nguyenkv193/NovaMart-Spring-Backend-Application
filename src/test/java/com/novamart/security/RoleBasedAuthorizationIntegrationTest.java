@@ -6,6 +6,7 @@ import com.novamart.modules.users.enums.Permission;
 import com.novamart.modules.users.enums.Role;
 import com.novamart.modules.users.repository.UserRepository;
 import com.novamart.security.jwt.JwtTokenProvider;
+import com.novamart.security.constants.SecurityConstants;
 import com.novamart.security.userdetails.UserDetail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,6 +28,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class RoleBasedAuthorizationIntegrationTest {
+
+    private static final String PASSWORD = "password";
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,7 +67,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void userCannotCreateProduct() throws Exception {
+    void shouldRejectProductCreationWhenUserIsNotAdmin() throws Exception {
         mockMvc.perform(post("/api/v1/products")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(regularUser))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -74,7 +77,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void adminCanCreateProduct() throws Exception {
+    void shouldAllowProductCreationWhenUserIsAdmin() throws Exception {
         mockMvc.perform(post("/api/v1/products")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(adminUser))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -84,7 +87,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void userCannotListUsers() throws Exception {
+    void shouldRejectUserListWhenRequesterIsNotAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/users")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(regularUser)))
                 .andExpect(status().isForbidden())
@@ -92,7 +95,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void adminCanListUsers() throws Exception {
+    void shouldAllowUserListWhenRequesterIsAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/users")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(adminUser)))
                 .andExpect(status().isOk())
@@ -100,7 +103,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void authenticatedUserCanReadOwnProfile() throws Exception {
+    void shouldReturnCurrentUserForAuthenticatedRequester() throws Exception {
         mockMvc.perform(get("/api/v1/users/me")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(regularUser)))
                 .andExpect(status().isOk())
@@ -108,7 +111,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void userCanReadOwnUserById() throws Exception {
+    void shouldReturnOwnUserByIdForRegularUser() throws Exception {
         mockMvc.perform(get("/api/v1/users/{id}", regularUser.getId())
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(regularUser)))
                 .andExpect(status().isOk())
@@ -116,7 +119,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void userCannotReadAnotherUserById() throws Exception {
+    void shouldRejectUserLookupWhenRegularUserDoesNotOwnUser() throws Exception {
         mockMvc.perform(get("/api/v1/users/{id}", adminUser.getId())
                         .header(HttpHeaders.AUTHORIZATION, bearerToken(regularUser)))
                 .andExpect(status().isForbidden())
@@ -124,7 +127,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void userCanLoginAfterUserSearchIsProtected() throws Exception {
+    void shouldAllowLoginAfterUserSearchIsProtected() throws Exception {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -138,7 +141,7 @@ class RoleBasedAuthorizationIntegrationTest {
     }
 
     @Test
-    void unauthenticatedWriteReturnsJsonError() throws Exception {
+    void shouldReturnUnauthorizedJsonWhenRequestIsUnauthenticated() throws Exception {
         mockMvc.perform(post("/api/v1/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(productRequest()))
@@ -146,20 +149,28 @@ class RoleBasedAuthorizationIntegrationTest {
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
+    @Test
+    void shouldReturnUnauthorizedJsonWhenUnauthenticatedUserListsUsers() throws Exception {
+        mockMvc.perform(get("/api/v1/users"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
     private User createUser(String email, Role role, Permission permission) {
-        User user = new User();
+        final User user = new User();
         user.setFirstName("Nova");
         user.setLastName(role.name());
-        user.setDateOfBirth(LocalDateTime.now().minusYears(20));
+        user.setDateOfBirth(LocalDate.of(2000, 1, 1));
         user.setEmail(email);
-        user.setPassword(passwordEncoder.encode("password"));
+        user.setPassword(passwordEncoder.encode(PASSWORD));
         user.setRole(role);
         user.setPermission(permission);
         return user;
     }
 
     private String bearerToken(User user) {
-        return "Bearer " + jwtTokenProvider.generateAccessToken(new UserDetail(user));
+        return SecurityConstants.BEARER_PREFIX
+                + jwtTokenProvider.generateAccessToken(new UserDetail(user));
     }
 
     private String productRequest() {

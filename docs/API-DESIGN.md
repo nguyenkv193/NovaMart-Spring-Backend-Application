@@ -50,7 +50,7 @@ Client -> gọi API protected với Authorization header
        <- API response hoặc 401 nếu token thiếu/không hợp lệ
 ```
 
-Access token hiện có thời hạn khoảng 1 giờ theo `app.jwt.expiration=3600000`.
+Access token hiện có thời hạn khoảng 1 giờ theo `app.jwt.expiration=1h`.
 
 ## 4. Response contract
 
@@ -61,13 +61,13 @@ Các controller hiện tại trả về wrapper `ApiResponse`:
 ```json
 {
   "code": 200,
-  "message": "Request successful",
+  "message": "Yêu cầu thành công",
   "data": {},
-  "timestamps": "2026-08-02T10:00:00"
+  "timestamp": "2026-08-02T10:00:00"
 }
 ```
 
-`data` có thể là object, array hoặc `null`. Tên field `timestamps` là contract hiện tại của codebase.
+`data` có thể là object, array hoặc `null`. Field thời gian dùng tên `timestamp`.
 
 ### 4.2 Response lỗi
 
@@ -76,10 +76,10 @@ Business exception và validation exception được xử lý bởi `GlobalExcep
 ```json
 {
   "code": "BAD_REQUEST",
-  "message": "Bad Request",
+  "message": "Yêu cầu không hợp lệ",
   "path": "/api/v1/auth/register",
   "errors": {
-    "email": "Email is invalid"
+    "email": "ERR-005 - Email không hợp lệ"
   },
   "timestamp": "2026-08-02T10:00:00"
 }
@@ -93,7 +93,7 @@ Các mã lỗi và HTTP mapping được định nghĩa:
 | 401 | `UNAUTHORIZED` | Thiếu JWT hoặc thông tin đăng nhập không đúng |
 | 403 | `FORBIDDEN` | Đã xác thực nhưng không có quyền thực hiện |
 | 404 | `NOT_FOUND` | Không tìm thấy resource |
-| 500 | `INTERNAL_ERROR` | Lỗi hệ thống; generic handler chưa được triển khai |
+| 500 | `INTERNAL_ERROR` | Lỗi hệ thống |
 
 Authentication entry point và access denied handler của Spring Security hiện trả JSON `ErrorResponse` thống nhất cho lỗi `401` và `403`.
 
@@ -131,7 +131,7 @@ Response: `201 Created`
 ```json
 {
   "code": 201,
-  "message": "User registered successfully",
+  "message": "SUC-013 - Đăng ký tài khoản thành công",
   "data": {
     "accessToken": "<jwt>",
     "tokenType": "Bearer",
@@ -148,7 +148,7 @@ Response: `201 Created`
       "updatedAt": "2026-08-02T10:00:00"
     }
   },
-  "timestamps": "2026-08-02T10:00:00"
+  "timestamp": "2026-08-02T10:00:00"
 }
 ```
 
@@ -182,7 +182,7 @@ Request:
 
 Response thành công: `200 OK`, trả về cùng cấu trúc `AuthResponse` như endpoint register.
 
-Sai email hoặc password trả về `401 UNAUTHORIZED` với message `Invalid email or password`.
+Sai email hoặc password trả về `401 UNAUTHORIZED` với message `ERR-007 - Email hoặc mật khẩu không hợp lệ`.
 
 ### 5.3 Refresh token và logout
 
@@ -300,12 +300,12 @@ Response: `201 Created`.
 ### 7.4 Cập nhật sản phẩm
 
 ```http
-PUT /api/v1/products/{id}/update
+PUT /api/v1/products/{id}
 Authorization: Bearer <access-token>
 Content-Type: application/json
 ```
 
-Response hiện tại: `201 Created`. Theo REST convention, contract tương lai nên cân nhắc dùng `200 OK` cho update.
+Response: `200 OK`.
 
 ### 7.5 Xóa sản phẩm
 
@@ -323,12 +323,12 @@ Response hiện tại: `200 OK` với `data: null`. Nếu không tìm thấy s�
   "id": 1,
   "name": "Mechanical Keyboard",
   "description": "Wireless mechanical keyboard",
-  "price": 129,
+  "price": 129.99,
   "quantity": 20
 }
 ```
 
-Implementation hiện tại khai báo `price` là `BigDecimal` ở request/entity nhưng `Long` ở `ProductResponse`. Đây là điểm cần thống nhất trước khi chốt contract tiền tệ; khuyến nghị dùng `BigDecimal` và quy định rõ scale, ví dụ 2 chữ số thập phân.
+`price` dùng `BigDecimal` với precision/scale phù hợp cho giá trị tiền tệ.
 
 ## 8. Orders API — Planned
 
@@ -402,9 +402,6 @@ Các giá trị enum hiện có: `PENDING`, `CONFIRMED`, `SHIPPING`, `COMPLETED`
 
 ## 10. Các quyết định cần chốt trước khi mở rộng API
 
-1. Đổi `ApiResponse.timestamps` thành `timestamp` và sửa typo `erros` thành `errors` hay giữ backward compatibility.
-2. Chuẩn hóa `ProductResponse.price` thành `BigDecimal`.
-3. Đổi `PUT /api/v1/products/{id}/update` thành `PUT /api/v1/products/{id}` và trả `200 OK`.
-4. Mapping chi tiết `Permission` (`READ`, `WRITE`, `UPDATE`, `DELETE`) với từng use case nếu cần.
-5. Bổ sung pagination/filter/sort cho danh sách users và products.
-6. Triển khai order API, refresh token và logout/revoke token.
+1. Mapping chi tiết `Permission` (`READ`, `WRITE`, `UPDATE`, `DELETE`) với từng use case nếu cần.
+2. Bổ sung pagination/filter/sort cho danh sách users và products.
+3. Triển khai order API, refresh token và logout/revoke token.

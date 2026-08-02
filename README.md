@@ -3,6 +3,8 @@
 ## Documentation
 
 - [API design](docs/API-DESIGN.md) — endpoint contract, request/response schema, authentication, authorization và roadmap cho các module.
+- [Engineering convention](CONVENTION.md) — coding, REST, security, logging và testing convention.
+- [Agent instructions](AGENTS.md) — hướng dẫn để agent tuân thủ convention khi tạo hoặc sửa code.
 
 Backend REST API cho nền tảng thương mại điện tử NovaMart, được xây dựng với Spring Boot và kiến trúc module hóa. Project hiện tập trung vào xác thực người dùng, quản lý tài khoản và quản lý sản phẩm; domain đơn hàng đã được khai báo ở tầng entity để tiếp tục phát triển.
 
@@ -99,14 +101,15 @@ spring.datasource.url=jdbc:h2:mem:productdb
 spring.datasource.username=sa
 spring.datasource.password=
 spring.datasource.driver-class-name=org.h2.Driver
+spring.jpa.open-in-view=false
 
-app.jwt.secret=<hex-secret>
-app.jwt.expiration=3600000
+app.jwt.secret=${NOVAMART_JWT_SECRET}
+app.jwt.expiration=1h
 ```
 
-`app.jwt.expiration=3600000` tương ứng thời hạn access token khoảng 1 giờ ở cấu hình hiện tại.
+Trước khi chạy ứng dụng, cần cấu hình biến môi trường `NOVAMART_JWT_SECRET` bằng một secret dạng hex đủ dài. `app.jwt.expiration=1h` tương ứng thời hạn access token khoảng 1 giờ.
 
-Database đang sử dụng H2 in-memory nên dữ liệu sẽ mất khi ứng dụng khởi động lại. Secret JWT hiện chỉ phù hợp cho môi trường local; khi deploy cần đưa secret vào biến môi trường hoặc secret manager.
+Database đang sử dụng H2 in-memory nên dữ liệu sẽ mất khi ứng dụng khởi động lại. Secret JWT được lấy từ biến môi trường; khi deploy nên quản lý bằng secret manager.
 
 ## Cấu trúc project
 
@@ -114,13 +117,13 @@ Database đang sử dụng H2 in-memory nên dữ liệu sẽ mất khi ứng d�
 src/main/java/com/novamart
 ├── common
 │   ├── exception      # Business exception và global exception handler
+│   ├── constants      # Validation constant dùng chung
 │   └── response       # ApiResponse và ErrorResponse
 ├── config             # Cấu hình chung, bao gồm JacksonConfig
-├── constants          # Constant dùng chung
 ├── modules
 │   ├── auth           # Register, login và tạo JWT
 │   ├── users          # User entity, repository, service và query API
-│   ├── products       # Product CRUD
+│   ├── products       # Product CRUD và message constants
 │   └── orders         # Order/OrderItem entity và trạng thái đơn hàng
 ├── security
 │   ├── config          # SecurityFilterChain và PasswordEncoder
@@ -209,7 +212,7 @@ Các endpoint `/api/v1/auth/**` và `GET /api/v1/products/**` được public. C
 | `GET` | `/api/v1/products` | Public | Lấy danh sách sản phẩm |
 | `GET` | `/api/v1/products/{id}` | Public | Lấy sản phẩm theo ID |
 | `POST` | `/api/v1/products` | `ADMIN` | Tạo sản phẩm |
-| `PUT` | `/api/v1/products/{id}/update` | `ADMIN` | Cập nhật sản phẩm |
+| `PUT` | `/api/v1/products/{id}` | `ADMIN` | Cập nhật sản phẩm |
 | `DELETE` | `/api/v1/products/{id}` | `ADMIN` | Xóa sản phẩm |
 
 Request tạo/cập nhật sản phẩm:
@@ -232,9 +235,9 @@ Response thành công có dạng tổng quát:
 ```json
 {
   "code": 200,
-  "message": "Request successful",
+  "message": "Yêu cầu thành công",
   "data": {},
-  "timestamps": "2026-08-02T10:00:00"
+  "timestamp": "2026-08-02T10:00:00"
 }
 ```
 
