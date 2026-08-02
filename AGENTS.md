@@ -31,4 +31,5 @@ Before creating or modifying code, read [CONVENTION.md](CONVENTION.md) and apply
 - Public: `/api/v1/auth/**` and `GET /api/v1/products/**`.
 - `ADMIN`: manage products and access administrative user queries.
 - Authenticated user: access their own user profile.
-- Future Orders rules must enforce owner access and server-side totals/stock checks.
+- Orders: authenticated users create/list/cancel their own orders; `ADMIN` reads any order and updates order status.
+- Orders must enforce owner access, server-side totals/price snapshots and transactional stock checks.

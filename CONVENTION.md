@@ -311,5 +311,5 @@ Các điểm sau đã biết và cần được xử lý có chủ đích, khôn
 
 - H2 hiện là database in-memory; dữ liệu mất khi restart.
 - JWT secret được lấy từ biến môi trường; production nên quản lý bằng secret manager.
-- Orders mới có entity/enum, chưa có API hoàn chỉnh.
+- Orders đã có API checkout; tồn kho được quản lý trên Product trong transaction với pessimistic write lock.
 - `Permission` hiện là một giá trị trên User; chưa phải mô hình nhiều permission.
