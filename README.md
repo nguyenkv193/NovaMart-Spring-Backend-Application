@@ -1,5 +1,9 @@
 # NovaMart Backend
 
+## Documentation
+
+- [API design](docs/API-DESIGN.md) — endpoint contract, request/response schema, authentication, authorization và roadmap cho các module.
+
 Backend REST API cho nền tảng thương mại điện tử NovaMart, được xây dựng với Spring Boot và kiến trúc module hóa. Project hiện tập trung vào xác thực người dùng, quản lý tài khoản và quản lý sản phẩm; domain đơn hàng đã được khai báo ở tầng entity để tiếp tục phát triển.
 
 ## Tính năng hiện tại
