@@ -15,6 +15,10 @@ import java.util.List;
 public class UserDetail implements UserDetails {
     private final User user;
 
+    public Long getUserId() {
+        return user.getId();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();

@@ -13,6 +13,7 @@ import com.novamart.modules.users.mapper.UserMapper;
 import com.novamart.modules.users.repository.UserRepository;
 import com.novamart.modules.users.services.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getUsers() {
         return userRepository
                 .findAll()
@@ -49,10 +51,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN') or #a0 == authentication.principal.userId")
     public UserResponse getUserById(Long id) {
         User user = userRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format(UserMessageConstants.USER_NOT_FOUND, id)));
+
+        return userMapper.toDTO(user);
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public UserResponse getCurrentUser(String email) {
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new NotFoundException(String.format(UserMessageConstants.EMAIL_NOT_FOUND, email)));
 
         return userMapper.toDTO(user);
     }
@@ -67,11 +80,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN') or #a0 == authentication.principal.userId")
     public UserResponse updateUser(Long id, UpdateUserRequest updateUserRequest) {
         return null;
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN') or #a0 == authentication.principal.userId")
     public void deleteUser(Long id) {
 
     }
