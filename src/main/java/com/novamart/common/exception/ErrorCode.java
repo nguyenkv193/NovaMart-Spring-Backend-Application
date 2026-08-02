@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
     BAD_REQUEST("BAD_REQUEST", "Bad Request", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED("UNAUTHORIZED", "Authentication required", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN("FORBIDDEN", "Access denied", HttpStatus.FORBIDDEN),
     NOT_FOUND("NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND),
     INTERNAL_ERROR("INTERNAL_ERROR", "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
 

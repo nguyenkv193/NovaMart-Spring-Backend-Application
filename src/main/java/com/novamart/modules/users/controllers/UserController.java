@@ -7,7 +7,14 @@ import com.novamart.modules.users.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -18,7 +25,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getUser() {
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getUsers() {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(
@@ -26,6 +33,21 @@ public class UserController {
                                 HttpStatus.OK.value(),
                                 UserMessageConstants.USERS_FETCHED_SUCCESSFULLY,
                                 userService.getUsers()
+                        )
+                );
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(
+                        ApiResponse.success(
+                                HttpStatus.OK.value(),
+                                "Current user fetched successfully",
+                                userService.getCurrentUser(userDetails.getUsername())
                         )
                 );
     }
@@ -44,6 +66,7 @@ public class UserController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> getUserByEmail(@RequestParam String email) {
         return ResponseEntity
                 .status(HttpStatus.OK)

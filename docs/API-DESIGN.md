@@ -33,9 +33,13 @@ Các endpoint không được đánh dấu **Public** yêu cầu JWT hợp lệ.
 |---|---|
 | `/api/v1/auth/**` | Public |
 | `GET /api/v1/products/**` | Public |
+| `GET /api/v1/users/me` | JWT required; chỉ user hiện tại |
+| `GET /api/v1/users/{id}` | `ADMIN` hoặc chính user |
+| `GET /api/v1/users`, `/api/v1/users/search` | `ADMIN` |
+| Product `POST`, `PUT`, `DELETE` | `ADMIN` |
 | Các request còn lại | JWT required |
 
-Role (`USER`, `ADMIN`) và permission (`READ`, `WRITE`, `UPDATE`, `DELETE`) đã có trong user model nhưng hiện chưa được dùng để giới hạn từng endpoint.
+Role (`USER`, `ADMIN`) hiện được dùng để giới hạn các use case quản trị. Permission (`READ`, `WRITE`, `UPDATE`, `DELETE`) đã có trong user model nhưng chưa được dùng làm policy chi tiết.
 
 ### 3.2 Luồng xác thực
 
@@ -87,10 +91,11 @@ Các mã lỗi và HTTP mapping được định nghĩa:
 |---:|---|---|
 | 400 | `BAD_REQUEST` | Request không hợp lệ hoặc email đã tồn tại |
 | 401 | `UNAUTHORIZED` | Thiếu JWT hoặc thông tin đăng nhập không đúng |
+| 403 | `FORBIDDEN` | Đã xác thực nhưng không có quyền thực hiện |
 | 404 | `NOT_FOUND` | Không tìm thấy resource |
 | 500 | `INTERNAL_ERROR` | Lỗi hệ thống; generic handler chưa được triển khai |
 
-Lưu ý: authentication entry point của Spring Security hiện trả `401` trực tiếp với message `Authentication is required`, chưa dùng chung JSON `ErrorResponse`.
+Authentication entry point và access denied handler của Spring Security hiện trả JSON `ErrorResponse` thống nhất cho lỗi `401` và `403`.
 
 ## 5. Auth API
 
@@ -185,7 +190,7 @@ Chưa được triển khai. Hiện client cần đăng nhập lại khi access 
 
 ## 6. Users API
 
-Module users hiện chỉ expose các API đọc. Tạo user bên ngoài được thực hiện qua `POST /api/v1/auth/register`.
+Module users hiện expose các API đọc. Tạo user bên ngoài được thực hiện qua `POST /api/v1/auth/register`; các API quản trị yêu cầu role `ADMIN`.
 
 ### 6.1 Danh sách user
 
@@ -194,27 +199,36 @@ GET /api/v1/users
 Authorization: Bearer <access-token>
 ```
 
-Response: `200 OK`, `data` là mảng `UserResponse`.
+Yêu cầu role `ADMIN`. Response: `200 OK`, `data` là mảng `UserResponse`.
 
-### 6.2 Lấy user theo ID
+### 6.2 User hiện tại
+
+```http
+GET /api/v1/users/me
+Authorization: Bearer <access-token>
+```
+
+User đã đăng nhập có thể lấy thông tin của chính mình. Response: `200 OK`.
+
+### 6.3 Lấy user theo ID
 
 ```http
 GET /api/v1/users/{id}
 Authorization: Bearer <access-token>
 ```
 
-Response: `200 OK`. Nếu không tìm thấy user: `404 NOT_FOUND`.
+User có thể lấy chính mình; `ADMIN` có thể lấy bất kỳ user nào. Nếu không tìm thấy user: `404 NOT_FOUND`.
 
-### 6.3 Tìm user theo email
+### 6.4 Tìm user theo email
 
 ```http
 GET /api/v1/users/search?email=user@example.com
 Authorization: Bearer <access-token>
 ```
 
-Response: `200 OK`. Nếu không tìm thấy email: `404 NOT_FOUND`.
+Yêu cầu role `ADMIN`. Nếu không tìm thấy email: `404 NOT_FOUND`.
 
-### 6.4 UserResponse
+### 6.5 UserResponse
 
 ```json
 {
@@ -376,8 +390,8 @@ Các giá trị enum hiện có: `PENDING`, `CONFIRMED`, `SHIPPING`, `COMPLETED`
 | Resource | Read | Write |
 |---|---|---|
 | Auth | Public | Public register/login |
-| Users | JWT | Không expose |
-| Products | Public | JWT |
+| Users | `ADMIN`; user đọc chính mình | Chưa expose |
+| Products | Public | `ADMIN` |
 | Orders | Chưa có API | Chưa có API |
 
 ### Định hướng
@@ -391,6 +405,6 @@ Các giá trị enum hiện có: `PENDING`, `CONFIRMED`, `SHIPPING`, `COMPLETED`
 1. Đổi `ApiResponse.timestamps` thành `timestamp` và sửa typo `erros` thành `errors` hay giữ backward compatibility.
 2. Chuẩn hóa `ProductResponse.price` thành `BigDecimal`.
 3. Đổi `PUT /api/v1/products/{id}/update` thành `PUT /api/v1/products/{id}` và trả `200 OK`.
-4. Chuẩn hóa response cho lỗi `401` để mọi lỗi dùng cùng một schema.
+4. Mapping chi tiết `Permission` (`READ`, `WRITE`, `UPDATE`, `DELETE`) với từng use case nếu cần.
 5. Bổ sung pagination/filter/sort cho danh sách users và products.
-6. Triển khai order API, refresh token, logout/revoke token và role-based authorization.
+6. Triển khai order API, refresh token và logout/revoke token.

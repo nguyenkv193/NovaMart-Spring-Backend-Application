@@ -8,6 +8,7 @@ import com.novamart.modules.products.mapper.ProductMapper;
 import com.novamart.modules.products.repository.ProductRepository;
 import com.novamart.modules.products.services.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -41,6 +42,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductResponse addProduct(ProductRequest productRequest) {
         Product product = productRepository.save(productMapper.toEntity(productRequest));
 
@@ -48,6 +50,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public ProductResponse updateProduct(Long id, ProductRequest productRequest) {
         Product product = productRepository.findById(id)
                 .orElseThrow(
@@ -65,6 +68,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(

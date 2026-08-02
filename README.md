@@ -180,7 +180,7 @@ Gửi token trong header:
 Authorization: Bearer <access-token>
 ```
 
-Các endpoint `/api/v1/auth/**` được public. `GET /api/v1/products/**` cũng được public; các endpoint còn lại yêu cầu JWT hợp lệ. Role/permission đã có trong user model nhưng phân quyền theo role ở từng endpoint chưa được cấu hình.
+Các endpoint `/api/v1/auth/**` và `GET /api/v1/products/**` được public. Các endpoint còn lại yêu cầu JWT hợp lệ. Product write và các API quản trị users yêu cầu role `ADMIN`; user thường chỉ được xem thông tin của chính mình qua `/api/v1/users/me` hoặc `/api/v1/users/{id}`.
 
 ## API hiện có
 
@@ -195,9 +195,10 @@ Các endpoint `/api/v1/auth/**` được public. `GET /api/v1/products/**` cũng
 
 | Method | Endpoint | Quyền | Mô tả |
 |---|---|---|---|
-| `GET` | `/api/v1/users` | JWT | Lấy danh sách user |
-| `GET` | `/api/v1/users/{id}` | JWT | Lấy user theo ID |
-| `GET` | `/api/v1/users/search?email={email}` | JWT | Tìm user theo email |
+| `GET` | `/api/v1/users` | `ADMIN` | Lấy danh sách user |
+| `GET` | `/api/v1/users/me` | JWT | Lấy thông tin user hiện tại |
+| `GET` | `/api/v1/users/{id}` | `ADMIN` hoặc chính user | Lấy user theo ID |
+| `GET` | `/api/v1/users/search?email={email}` | `ADMIN` | Tìm user theo email |
 
 Đăng ký tài khoản được thực hiện qua Auth module; endpoint `POST /api/v1/users` không còn được expose.
 
@@ -207,9 +208,9 @@ Các endpoint `/api/v1/auth/**` được public. `GET /api/v1/products/**` cũng
 |---|---|---|---|
 | `GET` | `/api/v1/products` | Public | Lấy danh sách sản phẩm |
 | `GET` | `/api/v1/products/{id}` | Public | Lấy sản phẩm theo ID |
-| `POST` | `/api/v1/products` | JWT | Tạo sản phẩm |
-| `PUT` | `/api/v1/products/{id}/update` | JWT | Cập nhật sản phẩm |
-| `DELETE` | `/api/v1/products/{id}` | JWT | Xóa sản phẩm |
+| `POST` | `/api/v1/products` | `ADMIN` | Tạo sản phẩm |
+| `PUT` | `/api/v1/products/{id}/update` | `ADMIN` | Cập nhật sản phẩm |
+| `DELETE` | `/api/v1/products/{id}` | `ADMIN` | Xóa sản phẩm |
 
 Request tạo/cập nhật sản phẩm:
 
@@ -257,12 +258,13 @@ Hiện tại Orders mới có entity và enum; REST controller, service và repo
 - Password hashing bằng BCrypt.
 - Product CRUD.
 - User query API.
+- Phân quyền `USER`/`ADMIN` cho Users và Products.
+- JSON response thống nhất cho lỗi xác thực `401` và từ chối quyền `403`.
 - Validation và xử lý exception tập trung.
 
 ### Dự kiến phát triển tiếp
 
 - Order API và checkout flow.
-- Phân quyền `USER`/`ADMIN` ở từng endpoint.
 - Hoàn thiện update/delete user.
 - Refresh token, logout và cơ chế revoke token.
 - Chuyển từ H2 in-memory sang database persistent.
