@@ -1,6 +1,5 @@
 package com.novamart.modules.users.repository;
 
-import com.novamart.modules.users.dto.UserResponse;
 import com.novamart.modules.users.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 

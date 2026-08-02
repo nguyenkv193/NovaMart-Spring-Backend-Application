@@ -46,14 +46,14 @@ public class UserController {
                 .body(
                         ApiResponse.success(
                                 HttpStatus.OK.value(),
-                                "Current user fetched successfully",
+                                UserMessageConstants.CURRENT_USER_FETCHED_SUCCESSFULLY,
                                 userService.getCurrentUser(userDetails.getUsername())
                         )
                 );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable("id") Long id) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(
@@ -67,14 +67,14 @@ public class UserController {
 
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponse>> getUserByEmail(@RequestParam String email) {
+    public ResponseEntity<ApiResponse<UserResponse>> getUserByEmail(@RequestParam("email") String email) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(
                         ApiResponse.success(
                                 HttpStatus.OK.value(),
-                                String.format("Tìm thấy người dùng với email %s", email),
-                                userService.getUserByEmail(email)
+                                String.format(UserMessageConstants.USER_FOUND_BY_EMAIL_SUCCESSFULLY, email),
+                                userService.getUserByEmailForAdmin(email)
                         )
                 );
     }

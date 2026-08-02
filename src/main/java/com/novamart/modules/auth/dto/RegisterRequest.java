@@ -1,8 +1,10 @@
 package com.novamart.modules.auth.dto;
 
+import com.novamart.common.constants.ValidationMessageConstants;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,20 +17,21 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class RegisterRequest {
 
-    @NotBlank(message = "First name is required")
+    @NotBlank(message = ValidationMessageConstants.FIRST_NAME_REQUIRED)
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
+    @NotBlank(message = ValidationMessageConstants.LAST_NAME_REQUIRED)
     private String lastName;
 
-    @NotNull(message = "Date of birth is required")
+    @NotNull(message = ValidationMessageConstants.DATE_OF_BIRTH_REQUIRED)
+    @Past(message = ValidationMessageConstants.DATE_OF_BIRTH_MUST_BE_IN_PAST)
     private LocalDate dateOfBirth;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email is invalid")
+    @NotBlank(message = ValidationMessageConstants.EMAIL_REQUIRED)
+    @Email(message = ValidationMessageConstants.EMAIL_INVALID)
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must contain at least 6 characters")
+    @NotBlank(message = ValidationMessageConstants.PASSWORD_REQUIRED)
+    @Size(min = 6, message = ValidationMessageConstants.PASSWORD_TOO_SHORT)
     private String password;
 }

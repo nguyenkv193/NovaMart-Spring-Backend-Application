@@ -15,5 +15,5 @@ public interface ProductMapper {
     @Mapping(target = "updatedAt", ignore = true)
     Product toEntity(ProductRequest productRequest);
 
-    ProductResponse toDTO (Product product);
+    ProductResponse toResponse(Product product);
 }

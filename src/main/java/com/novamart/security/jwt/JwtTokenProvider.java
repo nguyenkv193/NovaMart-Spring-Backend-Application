@@ -20,9 +20,9 @@ public class JwtTokenProvider {
     private final JwtProperties jwtProperties;
 
     public String generateAccessToken(UserDetails userDetails) {
-        Date now = new Date();
+        final Date now = new Date();
 
-        Date expiration = new Date(
+        final Date expiration = new Date(
                 now.getTime()
                         + jwtProperties.getExpiration().toMillis()
         );
@@ -47,13 +47,15 @@ public class JwtTokenProvider {
             String token,
             Function<Claims, T> claimsResolver
     ) {
-        Claims claims = extractAllClaims(token);
+        final Claims claims = extractAllClaims(token);
 
         return claimsResolver.apply(claims);
     }
 
     public boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        final Date expiration = extractExpiration(token);
+
+        return expiration.before(new Date());
     }
 
     public boolean isTokenValid(
@@ -61,9 +63,9 @@ public class JwtTokenProvider {
             UserDetails userDetails
     ) {
         try {
-            String username = extractUsername(token);
+            final String username = extractUsername(token);
 
-            return username.equals(userDetails.getUsername())
+            return userDetails.getUsername().equals(username)
                     && !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException exception) {
             return false;
@@ -79,7 +81,7 @@ public class JwtTokenProvider {
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = HexFormat.of()
+        final byte[] keyBytes = HexFormat.of()
                 .parseHex(jwtProperties.getSecret());
 
         return Keys.hmacShaKeyFor(keyBytes);
