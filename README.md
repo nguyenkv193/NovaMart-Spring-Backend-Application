@@ -6,7 +6,7 @@
 - [Engineering convention](CONVENTION.md) — coding, REST, security, logging và testing convention.
 - [Agent instructions](AGENTS.md) — hướng dẫn để agent tuân thủ convention khi tạo hoặc sửa code.
 
-Backend REST API cho nền tảng thương mại điện tử NovaMart, được xây dựng với Spring Boot và kiến trúc module hóa. Project hiện tập trung vào xác thực người dùng, quản lý tài khoản và quản lý sản phẩm; domain đơn hàng đã được khai báo ở tầng entity để tiếp tục phát triển.
+Backend REST API cho nền tảng thương mại điện tử NovaMart, được xây dựng với Spring Boot và kiến trúc module hóa. Project hiện tập trung vào xác thực người dùng, quản lý tài khoản, sản phẩm và checkout đơn hàng.
 
 ## Tính năng hiện tại
 
@@ -15,6 +15,8 @@ Backend REST API cho nền tảng thương mại điện tử NovaMart, được
 - Xác thực stateless bằng JWT Bearer Token.
 - Quản lý và tra cứu thông tin người dùng.
 - CRUD sản phẩm.
+- Checkout tạo đơn hàng, snapshot giá và quản lý trạng thái đơn hàng.
+- Trừ và hoàn tồn kho trong cùng transaction với checkout/hủy đơn.
 - Validation request bằng Jakarta Validation.
 - Response dùng format thống nhất thông qua `ApiResponse`.
 - Global exception handler cho lỗi nghiệp vụ và lỗi validation.
@@ -124,7 +126,7 @@ src/main/java/com/novamart
 │   ├── auth           # Register, login và tạo JWT
 │   ├── users          # User entity, repository, service và query API
 │   ├── products       # Product CRUD và message constants
-│   └── orders         # Order/OrderItem entity và trạng thái đơn hàng
+│   └── orders         # Checkout, Order/OrderItem và trạng thái đơn hàng
 ├── security
 │   ├── config          # SecurityFilterChain và PasswordEncoder
 │   ├── jwt             # JWT provider và authentication filter
@@ -228,6 +230,39 @@ Request tạo/cập nhật sản phẩm:
 
 Tên sản phẩm tối đa 20 ký tự, mô tả tối đa 255 ký tự, giá và số lượng phải lớn hơn hoặc bằng 1.
 
+### Orders
+
+| Method | Endpoint | Quyền | Mô tả |
+|---|---|---|---|
+| `POST` | `/api/v1/orders` | JWT | Checkout và tạo đơn hàng của user hiện tại |
+| `GET` | `/api/v1/orders` | JWT | Lấy danh sách đơn hàng của user hiện tại |
+| `GET` | `/api/v1/orders/{id}` | Owner hoặc `ADMIN` | Lấy chi tiết đơn hàng |
+| `PATCH` | `/api/v1/orders/{id}/status` | `ADMIN` | Cập nhật trạng thái đơn hàng |
+| `DELETE` | `/api/v1/orders/{id}` | Owner, khi `PENDING` | Hủy đơn và hoàn tồn kho |
+
+Request checkout chỉ nhận sản phẩm và số lượng:
+
+```json
+{
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+```
+
+Server lấy user từ JWT, snapshot `unitPrice`, tự tính `totalAmount`, gán trạng thái ban đầu `PENDING` và khóa tồn kho trong transaction. Client không được gửi `userId`, `unitPrice`, `totalAmount` hoặc `status`. Sản phẩm không đủ tồn kho trả về `409 CONFLICT`.
+
+Trạng thái hợp lệ:
+
+```text
+PENDING -> CONFIRMED -> SHIPPING -> COMPLETED
+   |          |
+   +----------+------> CANCELLED
+```
+
 ## Response format
 
 Response thành công có dạng tổng quát:
@@ -251,7 +286,7 @@ Lỗi validation hoặc lỗi nghiệp vụ được xử lý tập trung và tr
 - `OrderItem`: sản phẩm, số lượng và đơn giá trong đơn hàng.
 - `OrderStatus`: `PENDING`, `CONFIRMED`, `SHIPPING`, `COMPLETED`, `CANCELLED`.
 
-Hiện tại Orders mới có entity và enum; REST controller, service và repository cho order chưa được triển khai.
+Orders đã có REST controller, service, repository, DTO, ownership policy và checkout transaction.
 
 ## Trạng thái phát triển
 
@@ -264,10 +299,10 @@ Hiện tại Orders mới có entity và enum; REST controller, service và repo
 - Phân quyền `USER`/`ADMIN` cho Users và Products.
 - JSON response thống nhất cho lỗi xác thực `401` và từ chối quyền `403`.
 - Validation và xử lý exception tập trung.
+- Order API với server-side total, price snapshot, ownership và inventory reservation.
 
 ### Dự kiến phát triển tiếp
 
-- Order API và checkout flow.
 - Hoàn thiện update/delete user.
 - Refresh token, logout và cơ chế revoke token.
 - Chuyển từ H2 in-memory sang database persistent.

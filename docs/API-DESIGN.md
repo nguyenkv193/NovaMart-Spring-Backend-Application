@@ -330,9 +330,9 @@ Response hiện tại: `200 OK` với `data: null`. Nếu không tìm thấy s�
 
 `price` dùng `BigDecimal` với precision/scale phù hợp cho giá trị tiền tệ.
 
-## 8. Orders API — Planned
+## 8. Orders API
 
-Module orders hiện có `Order`, `OrderItem` và `OrderStatus`, nhưng chưa có controller, service hoặc repository. Các endpoint dưới đây là đề xuất thiết kế, chưa gọi được ở môi trường hiện tại.
+Module orders đã triển khai checkout, ownership policy, quản lý trạng thái và inventory reservation trên Product.
 
 ### 8.1 Tạo đơn hàng
 
@@ -342,7 +342,7 @@ Authorization: Bearer <access-token>
 Content-Type: application/json
 ```
 
-Request đề xuất:
+Request:
 
 ```json
 {
@@ -355,15 +355,39 @@ Request đề xuất:
 }
 ```
 
-Business rules đề xuất:
+Business rules:
 
 - User lấy từ JWT, không nhận `userId` từ request body.
 - Server kiểm tra sản phẩm tồn tại và tồn kho.
 - `unitPrice` được snapshot từ giá sản phẩm tại thời điểm đặt hàng.
 - `totalAmount` và `status` do server tính/gán; client không được tự gửi.
 - Đơn mới có status `PENDING`.
+- Mỗi `productId` chỉ xuất hiện một lần trong request.
+- Server khóa bản ghi Product bằng pessimistic write lock trước khi kiểm tra và trừ tồn kho.
+- Nếu checkout thất bại, toàn bộ thay đổi tồn kho và order được rollback.
+- Sản phẩm không đủ tồn kho trả về `409 CONFLICT`.
 
-### 8.2 Các endpoint dự kiến
+Response thành công: `201 Created`, `data` là `OrderResponse`.
+
+```json
+{
+  "id": 10,
+  "status": "PENDING",
+  "orderAt": "2026-08-02T10:00:00",
+  "totalAmount": 259.98,
+  "items": [
+    {
+      "productId": 1,
+      "productName": "Mechanical Keyboard",
+      "quantity": 2,
+      "unitPrice": 129.99,
+      "subtotal": 259.98
+    }
+  ]
+}
+```
+
+### 8.2 Các endpoint
 
 | Method | Endpoint | Quyền dự kiến | Mục đích |
 |---|---|---|---|
@@ -371,7 +395,17 @@ Business rules đề xuất:
 | `GET` | `/api/v1/orders` | Authenticated user | Danh sách đơn của user hiện tại |
 | `GET` | `/api/v1/orders/{id}` | Owner hoặc `ADMIN` | Xem chi tiết đơn |
 | `PATCH` | `/api/v1/orders/{id}/status` | `ADMIN` | Cập nhật trạng thái |
-| `DELETE` | `/api/v1/orders/{id}` | Owner, trước khi xác nhận | Hủy đơn |
+| `DELETE` | `/api/v1/orders/{id}` | Owner, khi `PENDING` | Hủy đơn và hoàn tồn kho |
+
+Request cập nhật trạng thái:
+
+```json
+{
+  "status": "CONFIRMED"
+}
+```
+
+`ADMIN` chỉ được chuyển trạng thái theo flow hợp lệ. User chỉ được hủy order của chính mình khi order còn `PENDING`; thao tác này chuyển sang `CANCELLED` và cộng lại số lượng đã giữ trong tồn kho.
 
 ### 8.3 Order status
 
@@ -392,7 +426,7 @@ Các giá trị enum hiện có: `PENDING`, `CONFIRMED`, `SHIPPING`, `COMPLETED`
 | Auth | Public | Public register/login |
 | Users | `ADMIN`; user đọc chính mình | Chưa expose |
 | Products | Public | `ADMIN` |
-| Orders | Chưa có API | Chưa có API |
+| Orders | User đọc order của mình; `ADMIN` đọc mọi order | User checkout/hủy order của mình; `ADMIN` cập nhật status |
 
 ### Định hướng
 
@@ -403,5 +437,5 @@ Các giá trị enum hiện có: `PENDING`, `CONFIRMED`, `SHIPPING`, `COMPLETED`
 ## 10. Các quyết định cần chốt trước khi mở rộng API
 
 1. Mapping chi tiết `Permission` (`READ`, `WRITE`, `UPDATE`, `DELETE`) với từng use case nếu cần.
-2. Bổ sung pagination/filter/sort cho danh sách users và products.
-3. Triển khai order API, refresh token và logout/revoke token.
+2. Bổ sung pagination/filter/sort cho danh sách users, products và orders.
+3. Triển khai refresh token và logout/revoke token.

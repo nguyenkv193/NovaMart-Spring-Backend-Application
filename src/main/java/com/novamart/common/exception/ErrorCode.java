@@ -7,6 +7,7 @@ public enum ErrorCode {
     UNAUTHORIZED("UNAUTHORIZED", "Yêu cầu xác thực", HttpStatus.UNAUTHORIZED),
     FORBIDDEN("FORBIDDEN", "Từ chối truy cập", HttpStatus.FORBIDDEN),
     NOT_FOUND("NOT_FOUND", "Không tìm thấy tài nguyên", HttpStatus.NOT_FOUND),
+    CONFLICT("CONFLICT", "Xung đột trạng thái hoặc dữ liệu", HttpStatus.CONFLICT),
     INTERNAL_ERROR("INTERNAL_ERROR", "Lỗi hệ thống", HttpStatus.INTERNAL_SERVER_ERROR);
 
 

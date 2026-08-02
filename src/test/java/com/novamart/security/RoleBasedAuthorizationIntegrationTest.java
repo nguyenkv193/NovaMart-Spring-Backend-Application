@@ -1,5 +1,6 @@
 package com.novamart.security;
 
+import com.novamart.modules.orders.repository.OrderRepository;
 import com.novamart.modules.products.repository.ProductRepository;
 import com.novamart.modules.users.entity.User;
 import com.novamart.modules.users.enums.Permission;
@@ -41,6 +42,9 @@ class RoleBasedAuthorizationIntegrationTest {
     private ProductRepository productRepository;
 
     @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -51,6 +55,7 @@ class RoleBasedAuthorizationIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        orderRepository.deleteAll();
         productRepository.deleteAll();
         userRepository.deleteAll();
 
